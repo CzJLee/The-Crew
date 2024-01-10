@@ -4,8 +4,6 @@ import dataclasses
 import enum
 import colorama
 import random
-from typing import List, Optional, Dict
-import collections
 
 
 class PlayerNotInGameError(Exception):

@@ -56,13 +56,27 @@ suit_color = {
 
 @dataclasses.dataclass()
 class Card:
-    value: Value
-    suit: Suit
+    """Card class.
+
+    Attributes:
+        value: The value of the card. An integer from 1 to 9.
+        suit: The suit of the card. Can be either "Rocket", "Blue", "Green", "Pink", or "Yellow".
+    """
+
+    value: Value | int
+    suit: Suit | str
+
+    def __post_init__(self):
+        """Converts the value and suit to the appropriate enum."""
+        self.value = Value(self.value)
+        self.suit = Suit(self.suit.capitalize())
 
     def is_suit(self, suit: Suit) -> bool:
+        """Checks if the card is a specific suit."""
         return self.suit == suit
 
     def is_rocket(self) -> bool:
+        """Checks if the card is a rocket."""
         return self.is_suit(Suit.ROCKET)
 
     def __repr__(self):
@@ -80,6 +94,8 @@ class Card:
 
 
 class Deck:
+    """Represents a deck or a hand of cards."""
+
     blue_cards = [Card(value, Suit.BLUE) for value in Value]
     green_cards = [Card(value, Suit.GREEN) for value in Value]
     pink_cards = [Card(value, Suit.PINK) for value in Value]
@@ -87,21 +103,51 @@ class Deck:
     rocket_cards = [Card(Value(value), Suit.ROCKET) for value in range(1, 5)]
 
     def __init__(self):
-        self.cards: List[Card] = []
+        self.cards: list[Card] = []
 
     def __repr__(self):
         return str(self.cards)
 
+    def __iter__(self):
+        return iter(self.cards)
+
+    def __len__(self):
+        return len(self.cards)
+
+    def __contains__(self, card: Card):
+        """Checks if a card is in the deck."""
+        return card in self.cards
+
     def deal_cards(self, num_cards: int):
+        """Deals a number of cards.
+
+        Args:
+            num_cards: The total number of cards to deal.
+
+        Returns:
+            A list of Cards. Cards are removed from the deck.
+        """
         return [self.cards.pop() for _ in range(num_cards)]
+
+    def shuffle(self, seed: int | None = None) -> None:
+        """Shuffles the deck."""
+        random.seed(seed)
+        random.shuffle(self.cards)
+
+    def sort(self) -> None:
+        """Sorts the deck."""
+        self.cards.sort()
 
 
 class CardDeck(Deck):
+    """Deck of cards that are dealt to players."""
+
     num_cards: int = 40
 
     def __init__(self):
         """Creates a shuffled deck."""
-        
+        super().__init__()
+
         self.cards = []
         self.cards.extend(Deck.blue_cards)
         self.cards.extend(Deck.green_cards)
@@ -109,10 +155,12 @@ class CardDeck(Deck):
         self.cards.extend(Deck.yellow_cards)
         self.cards.extend(Deck.rocket_cards)
 
-        random.shuffle(self.cards)
+        self.shuffle()
 
 
 class TaskDeck(Deck):
+    """Deck of task cards."""
+
     num_cards: int = 36
 
     def __init__(self):
@@ -125,30 +173,48 @@ class TaskDeck(Deck):
         self.cards.extend(Deck.pink_cards)
         self.cards.extend(Deck.yellow_cards)
 
-        random.shuffle(self.cards)
+        self.shuffle()
 
 
 class Player:
-    def __init__(self, game: Optional["Game"] = None):
-        self.starting_hand: List[Card] = []
-        self.hand: List[Card] = []
+    """Represents a player in the game."""
+
+    def __init__(self, game: Game | None = None):
+        """Create a new player.
+
+        Args:
+            game: Optional Game to add the player to.
+        """
+        self.starting_hand: Deck = []
+        self.hand: Deck = []
         self.game = game
-        self.tasks: List[Card] = []
+        self.tasks: Deck = []
 
     @property
     def is_commander(self):
+        """True if the player started as the Commander."""
         return Card(Value.FOUR, Suit.ROCKET) in self.starting_hand
 
     @property
     def num_cards(self):
+        """The number of cards in the player's hand."""
         return len(self.hand)
 
-    def draw(self, cards: List[Card]):
+    def draw(self, cards: list[Card], sort: bool = True):
+        """Draws cards to form a starting hand.
+
+        Args:
+            cards: The cards to draw.
+            sort: Whether to sort the hand.
+        """
         self.starting_hand = cards
         self.hand = self.starting_hand
-        self.sort_hand()
 
-    def sort_hand(self):
+        if sort:
+            self.sort_hand()
+
+    def sort_hand(self) -> None:
+        """Sorts the cards in the player's hand."""
         self.hand.sort()
 
     # def assign_task(self, task_card: Card):
@@ -226,18 +292,29 @@ class Player:
 
 
 class Trick:
+    """Represents the current trick.
+
+    Attributes:
+        cards: The cards that have been played in the trick.
+        highest_card: The highest card currently winning the trick.
+        starting_suit: The suit that was played first.
+    """
+
     def __init__(self):
-        self.cards: Dict[Player, Card] = {}
-        self.highest_card: Optional[Card] = None
+        """Set up a new trick."""
+        self.cards: dict[Player, Card] = {}
+        self.highest_card: Card | None = None
         self.starting_suit: Suit = None
 
-    def __repr__(self):
+    def __str__(self):
         return str(list(self.cards.values()))
 
     def __contains__(self, card: Card):
+        """Checks if a card has been played in the trick."""
         return card in self.cards.values()
 
     def play_card(self, player: Player, card: Card):
+        """Play a card in the trick."""
         self.cards[player] = card
         if len(self.cards) == 1:
             self.starting_suit = card.suit
@@ -251,22 +328,37 @@ class Trick:
 
     @property
     def winning_player(self) -> Player:
+        """Returns the player currently winning the trick."""
         for player, card in self.cards.items():
             if card == self.highest_card:
                 return player
 
     @property
     def winning_card(self) -> Card:
+        """Returns the card that is winning the trick."""
         return self.highest_card
 
 
 class Game:
+    """Represents a game of Crew.
+
+    Contains information about the card deck, players, and current trick.
+
+    Attributes:
+        deck: The deck of cards.
+        task_desk: The deck of task cards.
+        task_cards: The task cards for the current mission.
+        unchosen_task_cards: The task cards that have not been chosen yet.
+        trick: The current trick.
+        played_cards: The cards that have been played in previous tricks.
+    """
+
     deck: CardDeck
     task_deck: TaskDeck
-    task_cards: List[Card]
-    unchosen_task_cards: List[Card]
+    task_cards: TaskDeck
+    unchosen_task_cards: TaskDeck
     trick: Trick
-    played_cards: List[Card]
+    played_cards: Deck
 
     def __init__(self, num_players: int = 4):
         self.num_players: int = 0
@@ -275,11 +367,13 @@ class Game:
 
     @property
     def commander(self) -> Player:
+        """Returns the player that is the current Commander."""
         for player in self.players:
             if player.is_commander:
                 return player
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
+        """Returns a string representation of the game."""
         game_repr = []
         for i, player in enumerate(self.players):
             game_repr.append(f"Player {i+1}: {player.hand}")
@@ -287,40 +381,52 @@ class Game:
         return "\n".join(game_repr)
 
     def new_mission(self) -> None:
+        """Set up a new mission.
+
+        Creates a new card deck, task deck, and deals cards to players.
+        """
         self.new_card_deck()
         self.new_task_deck()
         self.deal_cards()
         self.new_trick()
 
     def new_card_deck(self) -> None:
+        """Cretes a new card deck."""
         self.deck = CardDeck()
 
     def new_task_deck(self) -> None:
+        """Creates a new task deck."""
         self.task_deck = TaskDeck()
 
     def new_trick(self) -> None:
+        """Sets up a new trick."""
         self.trick = Trick()
 
     def add_new_player(self, player: Player):
+        """Add a new player to the game."""
         self.players.append(player)
         self.num_players += 1
         player.game = self
 
     def add_new_players(self, num_players: int) -> None:
+        """Add a number of new players to the game."""
         for _ in range(num_players):
             self.players.append(Player(self))
         self.num_players += num_players
 
     def deal_cards(self) -> None:
+        """Deal cards to all players in the game."""
         num_cards_per_player = CardDeck.num_cards // self.num_players
         for player in self.players:
             player.draw(self.deck.deal_cards(num_cards_per_player))
 
     def deal_task_cards(self, num_cards: int):
+        """Deal the number of task cards to be selected from."""
         self.task_cards = self.task_deck.deal_cards(num_cards)
         self.unchosen_task_cards = self.task_cards.copy()
 
     def assign_task_cards(self, game: Game):
+        """Interactive prompt for players to select task cards."""
         # Start with commander, and then increment
         player_number_selecting_task = self.players.index(game.commander)
         while self.unchosen_task_cards:
@@ -330,5 +436,3 @@ class Game:
             player_number_selecting_task = (
                 player_number_selecting_task + 1
             ) % self.num_players
-
-

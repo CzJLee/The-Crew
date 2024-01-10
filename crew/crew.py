@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-import colorama
 import random
+
+import colorama
 
 
 class PlayerNotInGameError(Exception):
     """If a player is not in a game."""
-
-    pass
 
 
 class Value(enum.IntEnum):

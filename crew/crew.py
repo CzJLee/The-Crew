@@ -9,10 +9,16 @@ import collections
 
 
 class PlayerNotInGameError(Exception):
+    """If a player is not in a game."""
+
     pass
 
 
 class Value(enum.IntEnum):
+    """Possible Card values.
+
+    Integers from 1 to 9."""
+
     ONE = 1
     TWO = 2
     THREE = 3
@@ -25,6 +31,11 @@ class Value(enum.IntEnum):
 
 
 class Suit(enum.StrEnum):
+    """Possible Card suits.
+
+    Can be either "Rocket", "Blue", "Green", "Pink", or "Yellow".
+    """
+
     ROCKET = "Rocket"
     BLUE = "Blue"
     GREEN = "Green"
@@ -33,6 +44,8 @@ class Suit(enum.StrEnum):
 
 
 class Token(enum.IntEnum):
+    """Tokens that exist in games for certain missions."""
+
     ONE = 1
     TWO = 2
     THREE = 3
@@ -45,6 +58,7 @@ class Token(enum.IntEnum):
     OMEGA = 10
 
 
+# Colors to associate with each suit when printing cards.
 suit_color = {
     Suit.ROCKET: colorama.Fore.RESET,
     Suit.BLUE: colorama.Fore.BLUE,
@@ -221,6 +235,7 @@ class Player:
     # 	self.tasks.append(task_card)
 
     def select_task_card(self) -> Card:
+        """Interactive prompt to select a task card from the list of task cards."""
         print(f"Your Hand: {self.hand}")
         print("Select a Task Card:")
         for i, task_card in enumerate(self.game.unchosen_task_cards):
@@ -247,6 +262,7 @@ class Player:
             return self.select_task_card()
 
     def select_card(self, starting_suit: Suit = None) -> Card:
+        """Interactive prompt to select a card to play for the current trick."""
         if starting_suit:
             valid_cards = [card for card in self.hand if card.suit == starting_suit]
         if not starting_suit or not valid_cards:
@@ -272,6 +288,7 @@ class Player:
             return self.select_card(starting_suit)
 
     def play_card(self, card: Card) -> None:
+        """Play a card in the current trick."""
         if self.game is None:
             raise PlayerNotInGameError
 
@@ -279,6 +296,7 @@ class Player:
         self.game.trick.play_card(player=self, card=card)
 
     def player_turn(self):
+        """Interactive prompt for a player to take their turn."""
         player_number = self.game.players.index(self) + 1
         print(f"You are player {player_number}")
         print(f"Current Trick: {self.game.trick}")

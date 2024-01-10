@@ -7,8 +7,10 @@ from typing import List, Optional, Dict
 from tqdm.auto import tqdm
 import collections
 
+
 class PlayerNotInGameError(Exception):
     pass
+
 
 class Value(enum.IntEnum):
     ONE = 1
@@ -21,12 +23,14 @@ class Value(enum.IntEnum):
     EIGHT = 8
     NINE = 9
 
+
 class Suit(enum.StrEnum):
     ROCKET = "Rocket"
     BLUE = "Blue"
     GREEN = "Green"
     PINK = "Pink"
     YELLOW = "Yellow"
+
 
 class Token(enum.IntEnum):
     ONE = 1
@@ -40,13 +44,15 @@ class Token(enum.IntEnum):
     FOUR_ARROW = 9
     OMEGA = 10
 
+
 suit_color = {
-    Suit.ROCKET : colorama.Fore.RESET,
-    Suit.BLUE : colorama.Fore.BLUE,
-    Suit.GREEN : colorama.Fore.GREEN,
-    Suit.PINK : colorama.Fore.MAGENTA,
-    Suit.YELLOW : colorama.Fore.YELLOW
+    Suit.ROCKET: colorama.Fore.RESET,
+    Suit.BLUE: colorama.Fore.BLUE,
+    Suit.GREEN: colorama.Fore.GREEN,
+    Suit.PINK: colorama.Fore.MAGENTA,
+    Suit.YELLOW: colorama.Fore.YELLOW,
 }
+
 
 @dataclasses.dataclass()
 class Card:
@@ -71,6 +77,7 @@ class Card:
             return False
         else:
             return self.suit > other.suit
+
 
 class Deck:
     blue_cards = [Card(value, Suit.BLUE) for value in Value]
@@ -103,9 +110,10 @@ class CardDeck(Deck):
 
         random.shuffle(self.cards)
 
+
 class TaskDeck(Deck):
     num_cards: int = 36
-    
+
     def __init__(self):
         """Creates a shuffled deck."""
         self.cards = []
@@ -115,6 +123,7 @@ class TaskDeck(Deck):
         self.cards.extend(Deck.yellow_cards)
 
         random.shuffle(self.cards)
+
 
 class Player:
     def __init__(self, game: Optional["Game"] = None):
@@ -151,12 +160,13 @@ class Player:
         while not valid_index:
             try:
                 index = int(input("Select a task to take: "))
-                if index in [(i + 1) % 10 for i in range(len(self.game.unchosen_task_cards))]:
+                if index in [
+                    (i + 1) % 10 for i in range(len(self.game.unchosen_task_cards))
+                ]:
                     valid_index = True
             except ValueError:
                 continue
         index = (index - 1) % 10
-
 
         confirmation_prompt = f"Would you like to take the task card: {self.game.unchosen_task_cards[index]} (Y/N) "
         confirmation = input(confirmation_prompt)
@@ -166,7 +176,6 @@ class Player:
             return selected_task_card
         else:
             return self.select_task_card()
-
 
     def select_card(self, starting_suit: Suit = None) -> Card:
         if starting_suit:
@@ -196,7 +205,7 @@ class Player:
     def play_card(self, card: Card) -> None:
         if self.game is None:
             raise PlayerNotInGameError
-        
+
         self.hand.remove(card)
         self.game.trick.play_card(player=self, card=card)
 
@@ -211,7 +220,6 @@ class Player:
 
         selected_card = self.select_card(starting_suit)
         self.play_card(selected_card)
-
 
 
 class Trick:
@@ -243,10 +251,11 @@ class Trick:
         for player, card in self.cards.items():
             if card == self.highest_card:
                 return player
-    
+
     @property
     def winning_card(self) -> Card:
         return self.highest_card
+
 
 class Game:
     deck: CardDeck
@@ -282,7 +291,7 @@ class Game:
 
     def new_card_deck(self) -> None:
         self.deck = CardDeck()
-    
+
     def new_task_deck(self) -> None:
         self.task_deck = TaskDeck()
 
@@ -315,7 +324,10 @@ class Game:
             print()
             print(f"Player {player_number_selecting_task + 1} selecting...")
             self.players[player_number_selecting_task].select_task_card()
-            player_number_selecting_task = (player_number_selecting_task + 1) % self.num_players
+            player_number_selecting_task = (
+                player_number_selecting_task + 1
+            ) % self.num_players
+
 
 if __name__ == "__main__":
     game = Game(5)
@@ -356,13 +368,7 @@ if __name__ == "__main__":
 
     total_rockets_seen = []
 
-    games_player_has_n = {
-        0: 0,
-        1: 0,
-        2: 0,
-        3: 0,
-        4: 0
-    }
+    games_player_has_n = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
 
     iterations = 1000000
     for i in tqdm(range(iterations)):
@@ -382,8 +388,8 @@ if __name__ == "__main__":
 
     total_rockets_seen_count = collections.Counter(total_rockets_seen)
     for key, value in sorted(total_rockets_seen_count.items()):
-        print(f"{key} Rockets : {round(100 * value / (iterations * game.num_players), 3)}%")
+        print(
+            f"{key} Rockets : {round(100 * value / (iterations * game.num_players), 3)}%"
+        )
     for n, value in sorted(games_player_has_n.items()):
         print(f"Game with {n} Rockets : {round(100 * value / (iterations), 3)}%")
-        
-

@@ -351,6 +351,8 @@ class Game:
         unchosen_task_cards: The task cards that have not been chosen yet.
         trick: The current trick.
         played_cards: The cards that have been played in previous tricks.
+        num_players: The number of players in the game.
+        players: The players in the game.
     """
 
     deck: CardDeck
@@ -359,10 +361,13 @@ class Game:
     unchosen_task_cards: TaskDeck
     trick: Trick
     played_cards: Deck
+    num_players: int
+    players: list[Player]
 
     def __init__(self, num_players: int = 4):
         self.num_players: int = 0
         self.players: List[Player] = []
+
         self.add_new_players(num_players)
 
     @property
@@ -391,7 +396,7 @@ class Game:
         self.new_trick()
 
     def new_card_deck(self) -> None:
-        """Cretes a new card deck."""
+        """Creates a new card deck."""
         self.deck = CardDeck()
 
     def new_task_deck(self) -> None:
